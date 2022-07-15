@@ -17,7 +17,12 @@ classifiers = [
     "Typing :: Typed",
 ]
 requires-python = ">= 3.7"
-dependencies = ["pyserde >= 0.8"]
+dependencies = [
+    "click >= 8.0",
+    "jinja2 >= 3.0",
+    "pyserde[toml] >= 0.8",
+    "typer >= 0.6",
+]
 dynamic = ["version"]
 
 [project.readme]
@@ -40,3 +45,9 @@ testpaths = ["tests"]
 
 [tool.isort]
 profile = "black"
+
+[tool.pyright]
+extraPaths = [
+    ".nox/tests-3-10/lib/python3.10/site-packages/",
+    "src"
+]
