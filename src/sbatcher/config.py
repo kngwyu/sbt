@@ -10,6 +10,13 @@ from serde import deserialize, field
 
 @deserialize
 @dataclass
+class AcctgFreq:
+    datatype: Literal["task", "energy", "network", "filesystem"]
+    interval: int
+
+
+@deserialize
+@dataclass
 class Array:
     values: list[int] = field(default_factory=list)
     range_: list[int] = field(default_factory=list, rename="range")
@@ -18,18 +25,54 @@ class Array:
 
 @deserialize
 @dataclass
+class ClusterConstraint:
+    features: list[str]
+    exclude: bool = False
+
+
+@deserialize
+@dataclass
+class CpuFreq:
+    p1: int | Literal["low", "medium", "high", "highm1"]
+    p2: int | Literal["medium", "high", "highm1"] | None = None
+    p3: Literal[
+        "Conservative", "OnDemand", "Performance", "PowerSave", "SchedUtil", "UserSpace"
+    ] | None = None
+
+
+@deserialize
+@dataclass
 class Distribution:
-    first: Literal["block"] | Literal["cyclic"] | Literal["arbitary"] | int
-    second: Literal["block"] | Literal["cyclic"] | Literal["fcyclic"]
-    third: Literal["block"] | Literal["cyclic"] | Literal["fcyclic"]
+    first: Literal["block", "cycle", "arbitary"] | int
+    second: Literal["block", "cyclic", "fcyclic"] | None = None
+    third: Literal["block", "cyclic", "fcyclic"] | None = None
     pack: bool = False
 
 
 @deserialize
 @dataclass
 class GpuBind:
-    timeout: int | None = None
-    mode: Literal["S"] | Literal["L"] | None = None
+    type_: Literal[
+        "closest", "map_gpu", "mask_gpu", "none", "per_task", "single"
+    ] = field(rename="type")
+    value: int | list[str] | None = None
+    verbose: bool = False
+
+
+@deserialize
+@dataclass
+class GpuFreq:
+    value: int | Literal["low", "medium", "high", "highm1"]
+    memory: int | Literal["low", "medium", "high", "highm1"] | None = None
+    verbose: bool = False
+
+
+@deserialize
+@dataclass
+class License:
+    name: str
+    db: str = ""
+    count: int | None = None
 
 
 @deserialize
@@ -38,12 +81,14 @@ class Options:
     """sbatch options"""
 
     account: str = ""
+    acctg_freq: list[AcctgFreq] = field(default_factory=list)
     array: Array | None = None
     batch: str = ""
     bb: str = ""
     bbf: Path | None = None
     begin: datetime | time | None = None
     chdir: Path | None = None
+    cluster_constraint: ClusterConstraint | None = None
     clusters: list[str] = field(default_factory=list)
     comment: str = ""
     constraint: str = ""
@@ -51,7 +96,7 @@ class Options:
     contiguous: bool = False
     core_spec: int | None = None
     cores_per_socket: int | None = None
-    cpu_freq: str = ""
+    cpu_freq: CpuFreq | None = None
     cpus_per_gpu: int | None = None
     cpus_per_task: int | None = None
     deadline: datetime | time | None = None
@@ -67,4 +112,38 @@ class Options:
     ] | None = None
     get_user_env: str = ""
     gid: int | str = ""
-    # gpu_bind:
+    gpu_bind: GpuBind | None = None
+    gpu_freq: GpuFreq | None = None
+    gpus: list[int | tuple[str, int]] = field(default_factory=list)
+    gpus_per_node: list[int | tuple[str, int]] = field(default_factory=list)
+    gpus_per_task: list[int | tuple[str, int]] = field(default_factory=list)
+    gres: list[tuple[str, int] | tuple[str, str, int]] = field(default_factory=list)
+    gres_flags: Literal["disable-binding", "enforce-binding"] | None = None
+    hint: Literal[
+        "compute_bound", "memory_bound", "multithread", "nomultithread"
+    ] | None = None
+    hold: bool = False
+    input_: Path | None = field(default=None)
+    jobname: str = ""
+    kill_on_invalid_dep: Literal["yes", "no"] | None = None
+    licenses: list[License] = field(default_factory=list)
+    mail_type: list[
+        Literal[
+            "NONE",
+            "BEGIN",
+            "END",
+            "FAIL",
+            "REQUEUE",
+            "ALL",
+            "INVALID_DEPEND",
+            "REQUEUE",
+            "STAGE_OUT",
+            "TIME_LIMIT",
+            "TIME_LIMIT_90",
+            "TIME_LIMIT_80",
+            "TIME_LIMIT_50",
+            "ARRAY_TASKS",
+        ]
+    ] = field(default_factory=list)
+    mail_user: str = ""
+    mcs_label: str = ""
