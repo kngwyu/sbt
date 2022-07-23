@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, time
+from datetime import datetime
 from pathlib import Path
-from typing import Literal, Protocol
+from typing import Literal
 
 from serde import deserialize, field
 
-
-class SbatchStr(Protocol):
-    def as_sbatch_str(self) -> str:
-        ...
+from sbatcher.render_helper import render_optional
 
 
 @deserialize
@@ -30,7 +27,7 @@ class Array:
     range_: list[int] = field(default_factory=list, rename="range")
     max_parallel: int | None = None
 
-    def as_sbatch_str(self) -> str:
+    def __post_init__(self) -> None:
         vlen, rlen = len(self.values), len(self.range_)
         if vlen == 0 and rlen == 0:
             raise ValueError(
@@ -38,12 +35,15 @@ class Array:
             )
         elif vlen > 0 and rlen > 0:
             raise ValueError("Both of values of range are given in array = {...}")
-        elif rlen == 0:
-            ret = ",".join([str(value) for value in self.values])
         elif rlen == 1 or rlen > 3:
             raise ValueError(
                 "array = { range = [...]} expects an array with length 2 or 3"
             )
+
+    def as_sbatch_str(self) -> str:
+        rlen = len(self.range_)
+        if rlen == 0:
+            ret = ",".join([str(value) for value in self.values])
         else:
             a, b = self.range_[:2]
             ret = f"{a}-{b}"
@@ -74,19 +74,24 @@ class CpuFreq:
     p1: int | Literal["low", "medium", "high", "highm1"]
     p2: int | Literal["medium", "high", "highm1"] | None = None
     p3: Literal[
-        "Conservative", "OnDemand", "Performance", "PowerSave", "SchedUtil", "UserSpace"
+        "Conservative",
+        "OnDemand",
+        "Performance",
+        "PowerSave",
+        "SchedUtil",
+        "UserSpace",
     ] | None = None
 
-    def as_sbatch_str(self) -> str:
-        ret = str(self.p1)
-        if self.p2 is not None:
-            ret += f"-{self.p2}"
-            if self.p3 is not None:
-                ret += f":{self.p3}"
-        else:
-            assert self.p3 is None, "Invalid cpu freq: p3 is specified without p2"
+    def __post_init__(self) -> None:
+        if self.p2 is None and self.p3 is not None:
+            raise ValueError("Invalid cpu freq: p3 is specified without p2")
 
-        return ret
+    def as_sbatch_str(self) -> str:
+        return (
+            str(self.p1)
+            + render_optional(self.p2, prefix="-")
+            + render_optional(self.p3, prefix=":")
+        )
 
 
 @deserialize
@@ -97,20 +102,17 @@ class Distribution:
     third: Literal["block", "cyclic", "fcyclic"] | None = None
     pack: bool = False
 
-    def as_sbatch_str(self) -> str:
-        ret = str(self.first)
-        if self.second is not None:
-            ret += f":{self.second}"
-            if self.third is not None:
-                ret += f":{self.third}"
-        else:
-            assert (
-                self.third is None
-            ), "Invalid distribution: third is specified without second"
+    def __post_init__(self) -> None:
+        if self.second is None and self.third is not None:
+            raise ValueError("Invalid distribution: third is specified without second")
 
-        if self.pack:
-            ret += ",{Pack}"
-        return ret
+    def as_sbatch_str(self) -> str:
+        return (
+            str(self.first)
+            + render_optional(self.second, prefix=":")
+            + render_optional(self.third, prefix=":")
+            + {True: ",{Pack}", False: ""}[self.pack]
+        )
 
 
 @deserialize
@@ -142,9 +144,7 @@ class GpuFreq:
     verbose: bool = False
 
     def as_sbatch_str(self) -> str:
-        ret = str(self.value)
-        if self.memory is not None:
-            ret += f",memory={self.memory}"
+        ret = str(self.value) + render_optional(self.memory, prefix=",memory=")
         if self.verbose:
             ret += ",verbose"
         return ret
@@ -158,19 +158,18 @@ class License:
     count: int | None = None
 
     def as_sbatch_str(self) -> str:
-        ret = self.name
-        if len(self.db) > 0:
-            ret += f"@{self.db}"
-        if self.count is not None:
-            ret += f":{self.count}"
-        return ret
+        return (
+            self.name
+            + render_optional(self.db, prefix="@")
+            + render_optional(self.count, prefix="")
+        )
 
 
 @deserialize
 @dataclass
 class Mem:
     size: int
-    unit: Literal["K", "M", "G", "T"]
+    unit: Literal["K", "M", "G", "T"] = "M"
 
     def as_sbatch_str(self) -> str:
         return f"{self.size}{self.unit}"
@@ -178,8 +177,22 @@ class Mem:
 
 @deserialize
 @dataclass
+class Signal:
+    num: str | int
+    time: int = 60
+    option: Literal["R", "B"] | None = None
+
+    def as_sbatch_str(self) -> str:
+        return render_optional(self.option, suffix=":") + f"{self.num}@{self.time}"
+
+
+@deserialize
+@dataclass
 class Options:
-    """sbatch options"""
+    """
+    Sbatch options.
+    Some options(--help, --test-only, --version, and --usage) are only available in CLI.
+    """
 
     account: str = ""
     acctg_freq: list[AcctgFreq] = field(default_factory=list)
@@ -187,7 +200,7 @@ class Options:
     batch: str = ""
     bb: str = ""
     bbf: Path | None = None
-    begin: datetime | time | None = None
+    begin: datetime | None = None
     chdir: Path | None = None
     cluster_constraint: ClusterConstraint | None = None
     clusters: list[str] = field(default_factory=list)
@@ -200,7 +213,7 @@ class Options:
     cpu_freq: CpuFreq | None = None
     cpus_per_gpu: int | None = None
     cpus_per_task: int | None = None
-    deadline: datetime | time | None = None
+    deadline: datetime | None = None
     delay_boot: int | None = None
     dependency: str = ""
     distribution: Distribution | None = None
@@ -209,7 +222,9 @@ class Options:
     export: Literal["ALL", "NONE"] | list[str] | None = None
     export_file: Path | None = None
     extra_node_info: tuple[
-        int | Literal["*"], int | Literal["*"], int | Literal["*"]
+        int | Literal["*"],
+        int | Literal["*"],
+        int | Literal["*"],
     ] | None = None
     get_user_env: str = ""
     gid: int | str = ""
@@ -221,7 +236,10 @@ class Options:
     gres: list[tuple[str, int] | tuple[str, str, int]] = field(default_factory=list)
     gres_flags: Literal["disable-binding", "enforce-binding"] | None = None
     hint: Literal[
-        "compute_bound", "memory_bound", "multithread", "nomultithread"
+        "compute_bound",
+        "memory_bound",
+        "multithread",
+        "nomultithread",
     ] | None = None
     hold: bool = False
     input_: Path | None = field(default=None)
@@ -271,3 +289,41 @@ class Options:
     parsable: bool = False
     partition: str | list[str] = ""
     power: list[str] = field(default_factory=list)
+    prefer: list[str] = field(default_factory=list)
+    priority: int | Literal["TOP"] | None = None
+    profile: Literal["All", "None"] | list[
+        Literal["Energy", "Task", "Lustre", "Network"]
+    ] = field(default_factory=list)
+    propagate: list[
+        Literal[
+            "ALL",
+            "NONE",
+            "AS",
+            "CORE",
+            "CPU",
+            "DATA",
+            "FSIZE",
+            "MEMLOCK",
+            "NOFILE",
+            "NPROC",
+            "RSS",
+            "STACK",
+        ]
+    ] = field(default_factory=list)
+    qos: int | None = None
+    quiet: bool = False
+    requeue: bool = False
+    reservation: list[str] = field(default_factory=list)
+    signal: Signal | None = None
+    sockets_per_node: int | None = None
+    spread_job: bool = False
+    thread_spec: int | None = None
+    threads_per_core: int | None = None
+    time: datetime | None = None
+    time_min: datetime | None = None
+    tmp: Mem | None = None
+    uid: int | str = ""
+    use_min_nodes: bool = False
+    verbose: bool = False
+    wait_all_nodes: bool = False
+    wckey: str = ""
