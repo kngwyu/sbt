@@ -2,7 +2,7 @@ import pytest
 from serde import SerdeError
 from serde.toml import from_toml
 
-from sbatcher.config import Options
+from sbatcher.options import Options
 
 
 def test_value_array() -> None:
@@ -34,15 +34,17 @@ def test_cluster_constraint() -> None:
     t1 = r"""
     cluster_constraint = {features = ["foo"]}
     """
-    cluter_constraint = from_toml(Options, t1).cluster_constraint
-    assert cluter_constraint.features == ["foo"]
+    cluster_constraint = from_toml(Options, t1).cluster_constraint
+    assert cluster_constraint is not None
+    assert cluster_constraint.features == ["foo"]
 
     t2 = r"""
     cluster_constraint = {exclude = true, features = ["foo", "bar"]}
     """
-    cluter_constraint = from_toml(Options, t2).cluster_constraint
-    assert cluter_constraint.exclude
-    assert cluter_constraint.features == ["foo", "bar"]
+    cluster_constraint = from_toml(Options, t2).cluster_constraint
+    assert cluster_constraint is not None
+    assert cluster_constraint.exclude
+    assert cluster_constraint.features == ["foo", "bar"]
 
     t3 = r"""
     cluster_constraint = {exclude = true}
@@ -57,6 +59,7 @@ def test_cpu_freq() -> None:
     """
 
     cpu_freq = from_toml(Options, t1).cpu_freq
+    assert cpu_freq is not None
     assert cpu_freq.p1 == "low"
 
     t2 = r"""
@@ -64,6 +67,7 @@ def test_cpu_freq() -> None:
     """
 
     cpu_freq = from_toml(Options, t2).cpu_freq
+    assert cpu_freq is not None
     assert cpu_freq.p1 == "low" and cpu_freq.p2 == "medium"
 
     t3 = r"""
@@ -71,6 +75,7 @@ def test_cpu_freq() -> None:
     """
 
     cpu_freq = from_toml(Options, t3).cpu_freq
+    assert cpu_freq is not None
     assert cpu_freq.p1 == 1 and (
         cpu_freq.p2 == "medium" and cpu_freq.p3 == "Conservative"
     )
@@ -89,6 +94,7 @@ def test_distribution() -> None:
     """
 
     distribution = from_toml(Options, t1).distribution
+    assert distribution is not None
     assert distribution.first == "block"
 
     t2 = r"""
@@ -96,6 +102,7 @@ def test_distribution() -> None:
     """
 
     distribution = from_toml(Options, t2).distribution
+    assert distribution is not None
     assert distribution.first == "block" and distribution.second == "cyclic"
 
     t3 = r"""
@@ -103,6 +110,7 @@ def test_distribution() -> None:
     """
 
     distribution = from_toml(Options, t3).distribution
+    assert distribution is not None
     assert distribution.first == "block" and (
         distribution.second == "cyclic" and distribution.third == "fcyclic"
     )
@@ -127,6 +135,7 @@ def test_mem() -> None:
     mem = {size = 128, unit = "G"}
     """
     mem = from_toml(Options, toml).mem
+    assert mem is not None
     assert mem.size == 128 and mem.unit == "G"
 
 
@@ -135,10 +144,28 @@ def test_signal() -> None:
     signal = {num = 100}
     """
     signal = from_toml(Options, t1).signal
+    assert signal is not None
     assert signal.num == 100
 
     t2 = r"""
     signal = {num = "USR1", option = "R"}
     """
     signal = from_toml(Options, t2).signal
+    assert signal is not None
     assert signal.num == "USR1" and signal.option == "R"
+
+
+def test_time() -> None:
+    t1 = r"""
+    time = {hours = 12, minutes = 30}
+    """
+    time = from_toml(Options, t1).time
+    assert time is not None
+    assert time.days == 0 and (time.hours == 12 and time.minutes == 30)
+
+    t2 = r"""
+    time = {days = 3, hours = 12}
+    """
+    time = from_toml(Options, t2).time
+    assert time is not None
+    assert time.days == 3 and time.hours == 12

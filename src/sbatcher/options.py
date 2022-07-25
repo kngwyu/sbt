@@ -1,13 +1,23 @@
+"""Implement a collection of sbatch options."""
+
 from __future__ import annotations
 
+import datetime as dt
+import sys
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any
+
+from serde.compat import dataclasses
+
+if sys.version_info[:2] == (3, 7):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
 
 from serde import deserialize, field
 
-from sbatcher.render_helper import render_optional
+from sbatcher.render_helper import is_empty, render_optional
 
 
 @deserialize
@@ -117,6 +127,24 @@ class Distribution:
 
 @deserialize
 @dataclass
+class Duration:
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+
+    def __post_init__(self) -> None:
+        if self.days == 0 and self.hours == 0 and self.minutes == 0:
+            raise ValueError("Zero duration")
+
+    def as_sbatch_str(self) -> str:
+        if self.days == 0:
+            return f"{self.hours}:{self.minutes}"
+        else:
+            return f"{self.days}-{self.hours}:{self.minutes}"
+
+
+@deserialize
+@dataclass
 class GpuBind:
     type_: Literal[
         "closest", "map_gpu", "mask_gpu", "none", "per_task", "single"
@@ -188,6 +216,19 @@ class Signal:
 
 @deserialize
 @dataclass
+class Switches:
+    count: int
+    max_time: Duration | None = None
+
+    def as_sbatch_str(self):
+        if self.max_time is None:
+            return str(self.count)
+        else:
+            return f"{self.count}@{self.max_time.as_sbatch_str()}"
+
+
+@deserialize
+@dataclass
 class Options:
     """
     Sbatch options.
@@ -200,7 +241,8 @@ class Options:
     batch: str = ""
     bb: str = ""
     bbf: Path | None = None
-    begin: datetime | None = None
+    # TODO: This does not work now because of an upstream bug
+    begin: dt.datetime | None = None
     chdir: Path | None = None
     cluster_constraint: ClusterConstraint | None = None
     clusters: list[str] = field(default_factory=list)
@@ -213,11 +255,10 @@ class Options:
     cpu_freq: CpuFreq | None = None
     cpus_per_gpu: int | None = None
     cpus_per_task: int | None = None
-    deadline: datetime | None = None
+    deadline: dt.datetime | None = None
     delay_boot: int | None = None
     dependency: str = ""
     distribution: Distribution | None = None
-    error: Path = Path("{{ SBATCHER_CONFIG_FILE }}.err")
     exclusive: Literal["mcs", "user"] | None = None
     export: Literal["ALL", "NONE"] | list[str] | None = None
     export_file: Path | None = None
@@ -243,7 +284,7 @@ class Options:
     ] | None = None
     hold: bool = False
     input_: Path | None = field(default=None)
-    jobname: str = ""
+    job_name: str = ""
     kill_on_invalid_dep: Literal["yes", "no"] | None = None
     licenses: list[License] = field(default_factory=list)
     mail_type: list[
@@ -272,7 +313,7 @@ class Options:
     mincpus: int | None = None
     network: Literal["system", "blade"] | None = None
     nice: int | None = None
-    no_kill: bool = False
+    no_kill: bool | Literal["off"] = False
     no_requeue: bool = False
     node_file: Path | None = None
     nodelist: list[str] = field(default_factory=list)
@@ -283,7 +324,6 @@ class Options:
     ntasks_per_node: int | None = None
     ntasks_per_socket: int | None = None
     open_mode: Literal["append", "truncate"] | None = None
-    output: Path = Path("{{ SBATCHER_CONFIG_FILE }}.out")
     overcommit: bool = False
     oversubscribe: bool = False
     parsable: bool = False
@@ -317,13 +357,90 @@ class Options:
     signal: Signal | None = None
     sockets_per_node: int | None = None
     spread_job: bool = False
+    switches: Switches | None = None
     thread_spec: int | None = None
     threads_per_core: int | None = None
-    time: datetime | None = None
-    time_min: datetime | None = None
+    time: Duration | None = None
+    time_min: Duration | None = None
     tmp: Mem | None = None
     uid: int | str = ""
     use_min_nodes: bool = False
     verbose: bool = False
     wait_all_nodes: bool = False
     wckey: str = ""
+
+
+def _render_gpus(gpus: list[int | tuple[str, int]]) -> str:
+    def to_s(value: int | tuple[str, int]) -> str:
+        if isinstance(value, tuple):
+            return f"{value[0]}:{value[1]}"
+        else:
+            return str(value)
+
+    return "=" + ",".join([to_s(elem) for elem in gpus])
+
+
+def _render_gres(gres: list[tuple[str, int] | tuple[str, str, int]]) -> str:
+    def to_s(value: tuple[str, int] | tuple[str, str, int]) -> str:
+        return ":".join([str(elem) for elem in value])
+
+    return "=" + ",".join([to_s(elem) for elem in gres])
+
+
+def _render_no_kill(no_kill: bool | Literal["off"]) -> str:
+    if no_kill == "off":
+        return "=off"
+    else:
+        return ""
+
+
+def _render_nodes(nodes: int | tuple[int, int]) -> str:
+    if isinstance(nodes, tuple):
+        return "=" + f"{nodes[0]}-{nodes[1]}"
+    else:
+        return "=" + str(nodes)
+
+
+_CUSTOM_RENDER_FUNCTIONS = {
+    "extra_node_info": (lambda value: ":".join([str(elem) for elem in value])),
+    "gpus": _render_gpus,
+    "gpus_per_node": _render_gpus,
+    "gpus_per_task": _render_gpus,
+    "gres": _render_gres,
+    "no_kill": _render_no_kill,
+    "nodes": _render_nodes,
+    "wait_all_nodes": (lambda value: str(int(value))),
+}
+
+
+def _render_key(key: str) -> str:
+    return "--" + key.replace("_", "-")
+
+
+def _render_value(key: str, value: Any) -> str:
+    if key in _CUSTOM_RENDER_FUNCTIONS:
+        return _CUSTOM_RENDER_FUNCTIONS[key](value)
+    elif hasattr(value, "as_sbatch_str"):
+        return "=" + value.as_sbatch_str()
+    elif isinstance(value, (list, tuple)):
+        values = [
+            v.as_sbatch_str() if hasattr(v, "as_sbatch_str") else str(v) for v in value
+        ]
+        return "=" + ",".join(values)
+    elif isinstance(value, bool):
+        return ""
+    else:
+        return f"={value}"
+
+
+def render(options: Options) -> str:
+    res = []
+    for field in dataclasses.fields(options):
+        key = field.name
+        value = getattr(options, key)
+        if not is_empty(value):
+            res.append("#SBATCH " + _render_key(key) + _render_value(key, value))
+    rendered = "\n".join(res)
+    if len(res) != 0:
+        rendered = "\n" + rendered + "\n"
+    return rendered

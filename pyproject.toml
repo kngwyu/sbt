@@ -49,5 +49,6 @@ profile = "black"
 [tool.pyright]
 extraPaths = [
     ".nox/tests-3-10/lib/python3.10/site-packages/",
+    "../pyserde",
     "src"
 ]
