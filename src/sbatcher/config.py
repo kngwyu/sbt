@@ -69,6 +69,13 @@ def render(
     # Setup variables
     variables = copy.deepcopy(config.template_vars)
     variables.update(cli_options)
+    logdir = config.logdir.absolute()
+    variables.update(
+        {
+            "SBATCHER_JOB_NAME": job_name,
+            "SBATCHER_LOGFILE_NAME": logdir.joinpath(job_name).as_posix(),
+        }
+    )
 
     # Show unused variables
     if show_prompt:
@@ -112,12 +119,5 @@ def render(
         if not Confirm.ask(ask_text):
             exit(0)
 
-    logdir = config.logdir.absolute()
-    variables.update(
-        {
-            "SBATCHER_JOB_NAME": job_name,
-            "SBATCHER_LOGFILE_NAME": logdir.joinpath(job_name).as_posix(),
-        }
-    )
     # Render variables in the script
     return env.get_template("script").render(variables), job_name
