@@ -1,5 +1,4 @@
 """Implement a collection of sbatch options."""
-
 from __future__ import annotations
 
 import datetime as dt
@@ -7,7 +6,7 @@ import operator
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Tuple, Union
 
 from serde.compat import dataclasses
 
@@ -34,9 +33,9 @@ class AcctgFreq:
 @deserialize
 @dataclass
 class Array:
-    values: list[int] = field(default_factory=list)
-    range_: list[int] = field(default_factory=list, rename="range")
-    max_parallel: int | None = None
+    values: List[int] = field(default_factory=list)
+    range_: List[int] = field(default_factory=list, rename="range")
+    max_parallel: Union[int, None] = None
 
     def __post_init__(self) -> None:
         vlen, rlen = len(self.values), len(self.range_)
@@ -68,7 +67,7 @@ class Array:
 @deserialize
 @dataclass
 class ClusterConstraint:
-    features: list[str]
+    features: List[str]
     exclude: bool = False
 
     def as_sbatch_str(self) -> str:
@@ -82,16 +81,19 @@ class ClusterConstraint:
 @deserialize
 @dataclass
 class CpuFreq:
-    p1: int | Literal["low", "medium", "high", "highm1"]
-    p2: int | Literal["medium", "high", "highm1"] | None = None
-    p3: Literal[
-        "Conservative",
-        "OnDemand",
-        "Performance",
-        "PowerSave",
-        "SchedUtil",
-        "UserSpace",
-    ] | None = None
+    p1: Union[int, Literal["low", "medium", "high", "highm1"]]
+    p2: Union[int, Literal["medium", "high", "highm1"], None] = None
+    p3: Union[
+        Literal[
+            "Conservative",
+            "OnDemand",
+            "Performance",
+            "PowerSave",
+            "SchedUtil",
+            "UserSpace",
+        ],
+        None,
+    ] = None
 
     def __post_init__(self) -> None:
         if self.p2 is None and self.p3 is not None:
@@ -108,9 +110,9 @@ class CpuFreq:
 @deserialize
 @dataclass
 class Distribution:
-    first: Literal["block", "cycle", "arbitary"] | int
-    second: Literal["block", "cyclic", "fcyclic"] | None = None
-    third: Literal["block", "cyclic", "fcyclic"] | None = None
+    first: Union[Literal["block", "cycle", "arbitary"], int]
+    second: Union[Literal["block", "cyclic", "fcyclic"], None] = None
+    third: Union[Literal["block", "cyclic", "fcyclic"], None] = None
     pack: bool = False
 
     def __post_init__(self) -> None:
@@ -148,9 +150,14 @@ class Duration:
 @dataclass
 class GpuBind:
     type_: Literal[
-        "closest", "map_gpu", "mask_gpu", "none", "per_task", "single"
+        "closest",
+        "map_gpu",
+        "mask_gpu",
+        "none",
+        "per_task",
+        "single",
     ] = field(rename="type")
-    value: int | list[str] | None = None
+    value: Union[int, List[str], None] = None
     verbose: bool = False
 
     def as_sbatch_str(self) -> str:
@@ -168,8 +175,8 @@ class GpuBind:
 @deserialize
 @dataclass
 class GpuFreq:
-    value: int | Literal["low", "medium", "high", "highm1"]
-    memory: int | Literal["low", "medium", "high", "highm1"] | None = None
+    value: Union[int, Literal["low", "medium", "high", "highm1"]]
+    memory: Union[int, Literal["low", "medium", "high", "highm1"], None] = None
     verbose: bool = False
 
     def as_sbatch_str(self) -> str:
@@ -184,7 +191,7 @@ class GpuFreq:
 class License:
     name: str
     db: str = ""
-    count: int | None = None
+    count: Union[int, None] = None
 
     def as_sbatch_str(self) -> str:
         return (
@@ -207,9 +214,9 @@ class Mem:
 @deserialize
 @dataclass
 class Signal:
-    num: str | int
+    num: Union[str, int]
     time: int = 60
-    option: Literal["R", "B"] | None = None
+    option: Union[Literal["R", "B"], None] = None
 
     def as_sbatch_str(self) -> str:
         return render_optional(self.option, suffix=":") + f"{self.num}@{self.time}"
@@ -219,7 +226,7 @@ class Signal:
 @dataclass
 class Switches:
     count: int
-    max_time: Duration | None = None
+    max_time: Union[Duration, None] = None
 
     def as_sbatch_str(self):
         if self.max_time is None:
@@ -239,59 +246,67 @@ class Options:
     """
 
     account: str = ""
-    acctg_freq: list[AcctgFreq] = field(default_factory=list)
-    array: Array | None = None
+    acctg_freq: List[AcctgFreq] = field(default_factory=list)
+    array: Union[Array, None] = None
     batch: str = ""
     bb: str = ""
-    bbf: Path | None = None
+    bbf: Union[Path, None] = None
     # TODO: This does not work now because of an upstream bug
-    begin: dt.datetime | None = None
-    chdir: Path | None = None
-    cluster_constraint: ClusterConstraint | None = None
-    clusters: list[str] = field(default_factory=list)
+    begin: Union[dt.datetime, None] = None
+    chdir: Union[Path, None] = None
+    cluster_constraint: Union[ClusterConstraint, None] = None
+    clusters: List[str] = field(default_factory=list)
     comment: str = ""
     constraint: str = ""
-    container: Path | None = None
+    container: Union[Path, None] = None
     contiguous: bool = False
-    core_spec: int | None = None
-    cores_per_socket: int | None = None
-    cpu_freq: CpuFreq | None = None
-    cpus_per_gpu: int | None = None
-    cpus_per_task: int | None = None
-    deadline: dt.datetime | None = None
-    delay_boot: int | None = None
+    core_spec: Union[int, None] = None
+    cores_per_socket: Union[int, None] = None
+    cpu_freq: Union[CpuFreq, None] = None
+    cpus_per_gpu: Union[int, None] = None
+    cpus_per_task: Union[int, None] = None
+    deadline: Union[dt.datetime, None] = None
+    delay_boot: Union[int, None] = None
     dependency: str = ""
-    distribution: Distribution | None = None
+    distribution: Union[Distribution, None] = None
     error: str = "{{ SBATCHER_LOGFILE_NAME }}.err"
-    exclusive: Literal["mcs", "user"] | None = None
-    export: Literal["ALL", "NONE"] | list[str] | None = None
-    export_file: Path | None = None
-    extra_node_info: tuple[
-        int | Literal["*"],
-        int | Literal["*"],
-        int | Literal["*"],
-    ] | None = None
+    exclusive: Union[Literal["mcs", "user"], None] = None
+    export: Union[Literal["ALL", "NONE"], List[str], None] = None
+    export_file: Union[Path, None] = None
+    extra_node_info: Union[
+        Tuple[
+            Union[int, Literal["*"]],
+            Union[int, Literal["*"]],
+            Union[int, Literal["*"]],
+        ],
+        None,
+    ] = None
     get_user_env: str = ""
-    gid: int | str = ""
-    gpu_bind: GpuBind | None = None
-    gpu_freq: GpuFreq | None = None
-    gpus: list[int | tuple[str, int]] = field(default_factory=list)
-    gpus_per_node: list[int | tuple[str, int]] = field(default_factory=list)
-    gpus_per_task: list[int | tuple[str, int]] = field(default_factory=list)
-    gres: list[tuple[str, int] | tuple[str, str, int]] = field(default_factory=list)
-    gres_flags: Literal["disable-binding", "enforce-binding"] | None = None
-    hint: Literal[
-        "compute_bound",
-        "memory_bound",
-        "multithread",
-        "nomultithread",
-    ] | None = None
+    gid: Union[int, str] = ""
+    gpu_bind: Union[GpuBind, None] = None
+    gpu_freq: Union[GpuFreq, None] = None
+    gpus: List[Union[int, Tuple[str, int]]] = field(default_factory=list)
+    gpus_per_node: List[Union[int, Tuple[str, int]]] = field(default_factory=list)
+    gpus_per_task: List[Union[int, Tuple[str, int]]] = field(default_factory=list)
+    gres: List[Union[Tuple[str, int], Tuple[str, str, int]]] = field(
+        default_factory=list
+    )
+    gres_flags: Union[Literal["disable-binding", "enforce-binding"], None] = None
+    hint: Union[
+        Literal[
+            "compute_bound",
+            "memory_bound",
+            "multithread",
+            "nomultithread",
+        ],
+        None,
+    ] = None
     hold: bool = False
-    input_: Path | None = field(default=None)
+    input_: Union[Path, None] = field(default=None)
     job_name: str = "{{ SBATCHER_JOB_NAME }}"
-    kill_on_invalid_dep: Literal["yes", "no"] | None = None
-    licenses: list[License] = field(default_factory=list)
-    mail_type: list[
+    kill_on_invalid_dep: Union[Literal["yes", "no"], None] = None
+    licenses: List[License] = field(default_factory=list)
+    mail_type: List[
         Literal[
             "NONE",
             "BEGIN",
@@ -311,35 +326,36 @@ class Options:
     ] = field(default_factory=list)
     mail_user: str = ""
     mcs_label: str = ""
-    mem: Mem | None = None
-    mem_bind: Literal["local", "none"] | None = None
-    mem_per_cpu: Mem | None = None
-    mincpus: int | None = None
-    network: Literal["system", "blade"] | None = None
-    nice: int | None = None
-    no_kill: bool | Literal["off"] = False
+    mem: Union[Mem, None] = None
+    mem_bind: Union[Literal["local", "none"], None] = None
+    mem_per_cpu: Union[Mem, None] = None
+    mincpus: Union[int, None] = None
+    network: Union[Literal["system", "blade"], None] = None
+    nice: Union[int, None] = None
+    no_kill: Union[bool, Literal["off"]] = False
     no_requeue: bool = False
-    node_file: Path | None = None
-    nodelist: list[str] = field(default_factory=list)
-    nodes: int | tuple[int, int] | None = None
-    ntasks: int | None = None
-    ntasks_per_core: int | None = None
-    ntasks_per_gpu: int | None = None
-    ntasks_per_node: int | None = None
-    ntasks_per_socket: int | None = None
+    node_file: Union[Path, None] = None
+    nodelist: List[str] = field(default_factory=list)
+    nodes: Union[int, Tuple[int, int], None] = None
+    ntasks: Union[int, None] = None
+    ntasks_per_core: Union[int, None] = None
+    ntasks_per_gpu: Union[int, None] = None
+    ntasks_per_node: Union[int, None] = None
+    ntasks_per_socket: Union[int, None] = None
     output: str = "{{ SBATCHER_LOGFILE_NAME }}.out"
-    open_mode: Literal["append", "truncate"] | None = None
+    open_mode: Union[Literal["append", "truncate"], None] = None
     overcommit: bool = False
     oversubscribe: bool = False
     parsable: bool = False
-    partition: str | list[str] = ""
-    power: list[str] = field(default_factory=list)
-    prefer: list[str] = field(default_factory=list)
-    priority: int | Literal["TOP"] | None = None
-    profile: Literal["All", "None"] | list[
-        Literal["Energy", "Task", "Lustre", "Network"]
+    partition: Union[str, List[str]] = ""
+    power: List[str] = field(default_factory=list)
+    prefer: List[str] = field(default_factory=list)
+    priority: Union[int, Literal["TOP"], None] = None
+    profile: Union[
+        Literal["All", "None"],
+        List[Literal["Energy", "Task", "Lustre", "Network"]],
     ] = field(default_factory=list)
-    propagate: list[
+    propagate: List[
         Literal[
             "ALL",
             "NONE",
@@ -355,20 +371,20 @@ class Options:
             "STACK",
         ]
     ] = field(default_factory=list)
-    qos: int | None = None
+    qos: Union[int, None] = None
     quiet: bool = False
     requeue: bool = False
-    reservation: list[str] = field(default_factory=list)
-    signal: Signal | None = None
-    sockets_per_node: int | None = None
+    reservation: List[str] = field(default_factory=list)
+    signal: Union[Signal, None] = None
+    sockets_per_node: Union[int, None] = None
     spread_job: bool = False
-    switches: Switches | None = None
-    thread_spec: int | None = None
-    threads_per_core: int | None = None
-    time: Duration | None = None
-    time_min: Duration | None = None
-    tmp: Mem | None = None
-    uid: int | str = ""
+    switches: Union[Switches, None] = None
+    thread_spec: Union[int, None] = None
+    threads_per_core: Union[int, None] = None
+    time: Union[Duration, None] = None
+    time_min: Union[Duration, None] = None
+    tmp: Union[Mem, None] = None
+    uid: Union[int, str] = ""
     use_min_nodes: bool = False
     verbose: bool = False
     wait_all_nodes: bool = False
