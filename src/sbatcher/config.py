@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import jinja2
 import jinja2.meta
+from click.types import datetime
 from serde import deserialize, field
 from serde.se import copy
 
@@ -52,12 +53,17 @@ def _override_name(logdir: Path, overrides: dict[str, Any]) -> str:
 def render(
     name: str,
     config: Config,
-    cli_options: dict[str, Any],
+    cli_options: dict[str, str],
     show_prompt: bool = False,
-) -> str:
+    no_timestamp: bool = False,  # Only for testing
+) -> tuple[str, str]:
     # Render sbatch header
     options = render_options(config.slurm_options)
-    template_str, env = config.get_environment(config.shebang + options)
+    script = config.shebang + options
+    # Timestamp
+    if not no_timestamp:
+        script += f"# timestamp: {datetime.now().isoformat()}\n"
+    template_str, env = config.get_environment(script)
     # Make a unique job name and out/err file names
     job_name = name + "-" + _override_name(config.logdir, overrides=cli_options)
     # Setup variables
@@ -71,4 +77,4 @@ def render(
         }
     )
     # Render variables in the script
-    return env.get_template("script").render(variables)
+    return env.get_template("script").render(variables), job_name

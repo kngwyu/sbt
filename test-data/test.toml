@@ -1,0 +1,19 @@
+logdir = "/tmp/log"
+
+[slurm_options]
+cpus_per_task = 1
+gres = [["gpu", 1]]
+mail_type = ["END", "FAIL"]
+mail_user = "yuji.kanagawa@oist.jp"
+mem_per_cpu = { size = 16, unit = "G" }
+nodes = 1
+ntasks = 1
+ntasks_per_node = 1
+partition = "gpu"
+time = { hours = 12 }
+
+template = """
+mkdir -r {{ test_dir }}/test
+cd {{ test_dir }}/test
+echo {{ message }} > test.out
+"""
