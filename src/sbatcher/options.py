@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import operator
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -232,7 +233,9 @@ class Switches:
 class Options:
     """
     Sbatch options.
-    Some options(--help, --test-only, --version, and --usage) are only available in CLI.
+    Note that
+      - --help, --version, and --usage are not supported.
+      - --test-only is supported by sbatcher --dry-run.
     """
 
     account: str = ""
@@ -259,6 +262,7 @@ class Options:
     delay_boot: int | None = None
     dependency: str = ""
     distribution: Distribution | None = None
+    error: str = "{{ SBATCHER_OUT_NAME }}.err"
     exclusive: Literal["mcs", "user"] | None = None
     export: Literal["ALL", "NONE"] | list[str] | None = None
     export_file: Path | None = None
@@ -284,7 +288,7 @@ class Options:
     ] | None = None
     hold: bool = False
     input_: Path | None = field(default=None)
-    job_name: str = ""
+    job_name: str = "{{ SBATCHER_JOB_NAME }}"
     kill_on_invalid_dep: Literal["yes", "no"] | None = None
     licenses: list[License] = field(default_factory=list)
     mail_type: list[
@@ -323,6 +327,7 @@ class Options:
     ntasks_per_gpu: int | None = None
     ntasks_per_node: int | None = None
     ntasks_per_socket: int | None = None
+    output: str = "{{ SBATCHER_OUT_NAME }}.out"
     open_mode: Literal["append", "truncate"] | None = None
     overcommit: bool = False
     oversubscribe: bool = False
@@ -433,10 +438,9 @@ def _render_value(key: str, value: Any) -> str:
         return f"={value}"
 
 
-def render(options: Options) -> str:
+def render_options(options: Options) -> str:
     res = []
-    for field in dataclasses.fields(options):
-        key = field.name
+    for key in map(operator.attrgetter("name"), dataclasses.fields(options)):
         value = getattr(options, key)
         if not is_empty(value):
             res.append("#SBATCH " + _render_key(key) + _render_value(key, value))

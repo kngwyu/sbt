@@ -15,4 +15,5 @@ def lint(session: nox.Session) -> None:
 def tests(session: nox.Session) -> None:
     session.install("pytest")
     session.install("-e", ".")
+    session.install("git+https://github.com/yukinarit/pyserde.git@master", "tomli")
     session.run("pytest", "tests", *session.posargs)

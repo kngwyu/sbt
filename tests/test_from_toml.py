@@ -2,7 +2,26 @@ import pytest
 from serde import SerdeError
 from serde.toml import from_toml
 
+from sbatcher.config import Config
 from sbatcher.options import Options
+
+
+def test_config() -> None:
+    toml = r"""
+logdir = "/tmp/log"
+
+template_path = "template.sh"
+
+[slurm_options]
+nodes = 1
+partition = "gpu"
+"""
+    config = from_toml(Config, toml)
+    assert config.logdir.as_posix() == "/tmp/log"
+    assert config.template_path is not None
+    assert config.template_path.as_posix() == "template.sh"
+    assert config.slurm_options.nodes == 1
+    assert config.slurm_options.partition == "gpu"
 
 
 def test_value_array() -> None:
