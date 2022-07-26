@@ -1,7 +1,11 @@
 """CLI interface of sbatcher """
 
 
+from os import spawnvpe
+
 import click
+
+from sbatcher.submit import run_sbatch, save_script
 
 
 def _parse_arg(arg: str) -> tuple[str, str]:
@@ -30,3 +34,10 @@ def cli(
     overwrite: bool,
 ) -> None:
     additional_args = {kv[0]: kv[1] for kv in map(_parse_arg, context.args)}
+    script_path = save_script(
+        config_file_name=config_path,
+        cli_options=additional_args,
+        show_prompt=not yes,
+        overwrite=overwrite,
+    )
+    exit(run_sbatch(script_path, dry_run))

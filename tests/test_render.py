@@ -23,7 +23,7 @@ def test_render_options() -> None:
     rendered = render_options(options)
     expected = r"""
 #SBATCH --cpus-per-task=1
-#SBATCH --error={{ SBATCHER_OUT_NAME }}.err
+#SBATCH --error={{ SBATCHER_LOGFILE_NAME }}.err
 #SBATCH --gres=gpu:1
 #SBATCH --job-name={{ SBATCHER_JOB_NAME }}
 #SBATCH --mail-type=END,FAIL
@@ -32,7 +32,7 @@ def test_render_options() -> None:
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --output={{ SBATCHER_OUT_NAME }}.out
+#SBATCH --output={{ SBATCHER_LOGFILE_NAME }}.out
 #SBATCH --partition=gpu
 #SBATCH --time=1-0:0
 """
@@ -60,7 +60,7 @@ time = { hours = 12 }
 """
     config = from_toml(Config, toml)
     name = "myjob"
-    rendered = render(name, config, {"var": var})
+    rendered, jobname = render(name, config, {"var": var}, no_timestamp=True)
     expected = f"""#!/bin/bash -l
 #SBATCH --cpus-per-task=1
 #SBATCH --error=/tmp/log/{name}-var-{var}.err
@@ -77,3 +77,4 @@ time = { hours = 12 }
 #SBATCH --time=12:0
 echo {var}"""
     assert rendered == expected, rendered
+    assert jobname == f"{name}-var-{var}"

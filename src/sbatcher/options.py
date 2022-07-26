@@ -262,7 +262,7 @@ class Options:
     delay_boot: int | None = None
     dependency: str = ""
     distribution: Distribution | None = None
-    error: str = "{{ SBATCHER_OUT_NAME }}.err"
+    error: str = "{{ SBATCHER_LOGFILE_NAME }}.err"
     exclusive: Literal["mcs", "user"] | None = None
     export: Literal["ALL", "NONE"] | list[str] | None = None
     export_file: Path | None = None
@@ -327,7 +327,7 @@ class Options:
     ntasks_per_gpu: int | None = None
     ntasks_per_node: int | None = None
     ntasks_per_socket: int | None = None
-    output: str = "{{ SBATCHER_OUT_NAME }}.out"
+    output: str = "{{ SBATCHER_LOGFILE_NAME }}.out"
     open_mode: Literal["append", "truncate"] | None = None
     overcommit: bool = False
     oversubscribe: bool = False
