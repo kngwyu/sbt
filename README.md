@@ -1,4 +1,4 @@
-# sbatcher
+# sbt
 A simple tool for executing [`sbatch`][sbatch], which is the job submission script of [slurm] workload manager.
 
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 from serde.toml import from_toml
 
-from sbatcher.config import Config, render
-from sbatcher.options import Duration, Mem, Options, render_options
+from sbt.config import Config, render
+from sbt.options import Duration, Mem, Options, render_options
 
 
 def test_render_options() -> None:
@@ -23,16 +23,16 @@ def test_render_options() -> None:
     rendered = render_options(options)
     expected = r"""
 #SBATCH --cpus-per-task=1
-#SBATCH --error={{ SBATCHER_LOGFILE_NAME }}.err
+#SBATCH --error={{ SBT_LOGFILE_NAME }}.err
 #SBATCH --gres=gpu:1
-#SBATCH --job-name={{ SBATCHER_JOB_NAME }}
+#SBATCH --job-name={{ SBT_JOB_NAME }}
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=yuji.kanagawa@oist.jp
 #SBATCH --mem-per-cpu=16G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --output={{ SBATCHER_LOGFILE_NAME }}.out
+#SBATCH --output={{ SBT_LOGFILE_NAME }}.out
 #SBATCH --partition=gpu
 #SBATCH --time=1-0:0
 """

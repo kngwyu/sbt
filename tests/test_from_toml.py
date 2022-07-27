@@ -2,8 +2,8 @@ import pytest
 from serde import SerdeError
 from serde.toml import from_toml
 
-from sbatcher.config import Config
-from sbatcher.options import Options
+from sbt.config import Config
+from sbt.options import Options
 
 
 def test_config() -> None:

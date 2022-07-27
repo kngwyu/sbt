@@ -11,7 +11,7 @@ from rich.prompt import Confirm
 from rich.syntax import Syntax
 from serde.toml import from_toml
 
-from sbatcher.config import Config, render
+from sbt.config import Config, render
 
 
 def _nth_script(basedir: Path, script_name: str) -> int:

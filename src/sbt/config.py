@@ -10,7 +10,7 @@ import jinja2.meta
 from serde import deserialize, field
 from serde.se import copy
 
-from sbatcher.options import Options, render_options
+from sbt.options import Options, render_options
 
 
 @deserialize
@@ -72,8 +72,8 @@ def render(
     logdir = config.logdir.absolute()
     variables.update(
         {
-            "SBATCHER_JOB_NAME": job_name,
-            "SBATCHER_LOGFILE_NAME": logdir.joinpath(job_name).as_posix(),
+            "SBT_JOB_NAME": job_name,
+            "SBT_LOGFILE_NAME": logdir.joinpath(job_name).as_posix(),
         }
     )
 

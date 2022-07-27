@@ -1,9 +1,9 @@
-"""CLI interface of sbatcher """
+"""CLI interface of sbt """
 from __future__ import annotations
 
 import click
 
-from sbatcher.submit import run_sbatch, save_script
+from sbt.submit import run_sbatch, save_script
 
 
 def _parse_arg(arg: str) -> tuple[str, str]:

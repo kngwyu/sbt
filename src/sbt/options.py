@@ -17,7 +17,7 @@ else:
 
 from serde import deserialize, field
 
-from sbatcher.render_helper import is_empty, render_optional
+from sbt.render_helper import is_empty, render_optional
 
 
 @deserialize
@@ -242,7 +242,7 @@ class Options:
     Sbatch options.
     Note that
       - --help, --version, and --usage are not supported.
-      - --test-only is supported by sbatcher --dry-run.
+      - --test-only is supported by sbt --dry-run.
     """
 
     account: str = ""
@@ -269,7 +269,7 @@ class Options:
     delay_boot: Union[int, None] = None
     dependency: str = ""
     distribution: Union[Distribution, None] = None
-    error: str = "{{ SBATCHER_LOGFILE_NAME }}.err"
+    error: str = "{{ SBT_LOGFILE_NAME }}.err"
     exclusive: Union[Literal["mcs", "user"], None] = None
     export: Union[Literal["ALL", "NONE"], List[str], None] = None
     export_file: Union[Path, None] = None
@@ -303,7 +303,7 @@ class Options:
     ] = None
     hold: bool = False
     input_: Union[Path, None] = field(default=None)
-    job_name: str = "{{ SBATCHER_JOB_NAME }}"
+    job_name: str = "{{ SBT_JOB_NAME }}"
     kill_on_invalid_dep: Union[Literal["yes", "no"], None] = None
     licenses: List[License] = field(default_factory=list)
     mail_type: List[
@@ -342,7 +342,7 @@ class Options:
     ntasks_per_gpu: Union[int, None] = None
     ntasks_per_node: Union[int, None] = None
     ntasks_per_socket: Union[int, None] = None
-    output: str = "{{ SBATCHER_LOGFILE_NAME }}.out"
+    output: str = "{{ SBT_LOGFILE_NAME }}.out"
     open_mode: Union[Literal["append", "truncate"], None] = None
     overcommit: bool = False
     oversubscribe: bool = False

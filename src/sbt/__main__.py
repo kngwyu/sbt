@@ -1,4 +1,4 @@
-from sbatcher.cli import cli
+from sbt.cli import cli
 
 if __name__ == "__main__":
     cli()

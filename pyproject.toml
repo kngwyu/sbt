@@ -3,7 +3,7 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools>=61", "setuptools-scm"]
 
 [project]
-name = "sbatcher"
+name = "sbt"
 authors = [{name = "Yuji Kanagawa", email = "yuji.kanagawa@oist.jp"}]
 description = "A simple templating tool for executing sbatch"
 license = {text = "Apache2"}
@@ -31,15 +31,15 @@ file = "README.md"
 content-type = "text/markdown"
 
 [project.urls]
-homepage = "https://github.com/kngwyu/sbatcher"
-bug-tracker = "https://github.com/kngwyu/sbatcher/issues"
+homepage = "https://github.com/kngwyu/sbt"
+bug-tracker = "https://github.com/kngwyu/sbt/issues"
 
 [tool.setuptools]
 include-package-data = true
 license-files = ["LICENSE"]
 
 [tool.setuptools.dynamic]
-version = {attr = "sbatcher.__version__"}
+version = {attr = "sbt.__version__"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
