@@ -6,7 +6,7 @@ import operator
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from serde.compat import dataclasses
 
@@ -35,7 +35,7 @@ class AcctgFreq:
 class Array:
     values: List[int] = field(default_factory=list)
     range_: List[int] = field(default_factory=list, rename="range")
-    max_parallel: Union[int, None] = None
+    max_parallel: Optional[int] = None
 
     def __post_init__(self) -> None:
         vlen, rlen = len(self.values), len(self.range_)
@@ -83,7 +83,7 @@ class ClusterConstraint:
 class CpuFreq:
     p1: Union[int, Literal["low", "medium", "high", "highm1"]]
     p2: Union[int, Literal["medium", "high", "highm1"], None] = None
-    p3: Union[
+    p3: Optional[
         Literal[
             "Conservative",
             "OnDemand",
@@ -91,8 +91,7 @@ class CpuFreq:
             "PowerSave",
             "SchedUtil",
             "UserSpace",
-        ],
-        None,
+        ]
     ] = None
 
     def __post_init__(self) -> None:
@@ -111,8 +110,8 @@ class CpuFreq:
 @dataclass
 class Distribution:
     first: Union[Literal["block", "cycle", "arbitary"], int]
-    second: Union[Literal["block", "cyclic", "fcyclic"], None] = None
-    third: Union[Literal["block", "cyclic", "fcyclic"], None] = None
+    second: Optional[Literal["block", "cyclic", "fcyclic"]] = None
+    third: Optional[Literal["block", "cyclic", "fcyclic"]] = None
     pack: bool = False
 
     def __post_init__(self) -> None:
@@ -191,7 +190,7 @@ class GpuFreq:
 class License:
     name: str
     db: str = ""
-    count: Union[int, None] = None
+    count: Optional[int] = None
 
     def as_sbatch_str(self) -> str:
         return (
@@ -216,7 +215,7 @@ class Mem:
 class Signal:
     num: Union[str, int]
     time: int = 60
-    option: Union[Literal["R", "B"], None] = None
+    option: Optional[Literal["R", "B"]] = None
 
     def as_sbatch_str(self) -> str:
         return render_optional(self.option, suffix=":") + f"{self.num}@{self.time}"
@@ -226,7 +225,7 @@ class Signal:
 @dataclass
 class Switches:
     count: int
-    max_time: Union[Duration, None] = None
+    max_time: Optional[Duration] = None
 
     def as_sbatch_str(self):
         if self.max_time is None:
@@ -247,64 +246,62 @@ class Options:
 
     account: str = ""
     acctg_freq: List[AcctgFreq] = field(default_factory=list)
-    array: Union[Array, None] = None
+    array: Optional[Array] = None
     batch: str = ""
     bb: str = ""
-    bbf: Union[Path, None] = None
+    bbf: Optional[Path] = None
     # TODO: This does not work now because of an upstream bug
-    begin: Union[dt.datetime, None] = None
-    chdir: Union[Path, None] = None
+    begin: Optional[dt.datetime] = None
+    chdir: Optional[Path] = None
     cluster_constraint: Union[ClusterConstraint, None] = None
     clusters: List[str] = field(default_factory=list)
     comment: str = ""
     constraint: str = ""
-    container: Union[Path, None] = None
+    container: Optional[Path] = None
     contiguous: bool = False
-    core_spec: Union[int, None] = None
-    cores_per_socket: Union[int, None] = None
-    cpu_freq: Union[CpuFreq, None] = None
-    cpus_per_gpu: Union[int, None] = None
-    cpus_per_task: Union[int, None] = None
-    deadline: Union[dt.datetime, None] = None
-    delay_boot: Union[int, None] = None
+    core_spec: Optional[int] = None
+    cores_per_socket: Optional[int] = None
+    cpu_freq: Optional[CpuFreq] = None
+    cpus_per_gpu: Optional[int] = None
+    cpus_per_task: Optional[int] = None
+    deadline: Optional[dt.datetime] = None
+    delay_boot: Optional[int] = None
     dependency: str = ""
-    distribution: Union[Distribution, None] = None
+    distribution: Optional[Distribution] = None
     error: str = "{{ SBT_LOGFILE_NAME }}.err"
-    exclusive: Union[Literal["mcs", "user"], None] = None
+    exclusive: Optional[Literal["mcs", "user"]] = None
     export: Union[Literal["ALL", "NONE"], List[str], None] = None
-    export_file: Union[Path, None] = None
-    extra_node_info: Union[
+    export_file: Optional[Path] = None
+    extra_node_info: Optional[
         Tuple[
             Union[int, Literal["*"]],
             Union[int, Literal["*"]],
             Union[int, Literal["*"]],
-        ],
-        None,
+        ]
     ] = None
     get_user_env: str = ""
     gid: Union[int, str] = ""
-    gpu_bind: Union[GpuBind, None] = None
-    gpu_freq: Union[GpuFreq, None] = None
+    gpu_bind: Optional[GpuBind] = None
+    gpu_freq: Optional[GpuFreq] = None
     gpus: List[Union[int, Tuple[str, int]]] = field(default_factory=list)
     gpus_per_node: List[Union[int, Tuple[str, int]]] = field(default_factory=list)
     gpus_per_task: List[Union[int, Tuple[str, int]]] = field(default_factory=list)
     gres: List[Union[Tuple[str, int], Tuple[str, str, int]]] = field(
         default_factory=list
     )
-    gres_flags: Union[Literal["disable-binding", "enforce-binding"], None] = None
-    hint: Union[
+    gres_flags: Optional[Literal["disable-binding", "enforce-binding"]] = None
+    hint: Optional[
         Literal[
             "compute_bound",
             "memory_bound",
             "multithread",
             "nomultithread",
-        ],
-        None,
+        ]
     ] = None
     hold: bool = False
-    input_: Union[Path, None] = field(default=None)
+    input_: Optional[Path] = field(default=None)
     job_name: str = "{{ SBT_JOB_NAME }}"
-    kill_on_invalid_dep: Union[Literal["yes", "no"], None] = None
+    kill_on_invalid_dep: Optional[Literal["yes", "no"]] = None
     licenses: List[License] = field(default_factory=list)
     mail_type: List[
         Literal[
@@ -326,24 +323,24 @@ class Options:
     ] = field(default_factory=list)
     mail_user: str = ""
     mcs_label: str = ""
-    mem: Union[Mem, None] = None
-    mem_bind: Union[Literal["local", "none"], None] = None
-    mem_per_cpu: Union[Mem, None] = None
-    mincpus: Union[int, None] = None
-    network: Union[Literal["system", "blade"], None] = None
-    nice: Union[int, None] = None
+    mem: Optional[Mem] = None
+    mem_bind: Optional[Literal["local", "none"]] = None
+    mem_per_cpu: Optional[Mem] = None
+    mincpus: Optional[int] = None
+    network: Optional[Literal["system", "blade"]] = None
+    nice: Optional[int] = None
     no_kill: Union[bool, Literal["off"]] = False
     no_requeue: bool = False
-    node_file: Union[Path, None] = None
+    node_file: Optional[Path] = None
     nodelist: List[str] = field(default_factory=list)
     nodes: Union[int, Tuple[int, int], None] = None
-    ntasks: Union[int, None] = None
-    ntasks_per_core: Union[int, None] = None
-    ntasks_per_gpu: Union[int, None] = None
-    ntasks_per_node: Union[int, None] = None
-    ntasks_per_socket: Union[int, None] = None
+    ntasks: Optional[int] = None
+    ntasks_per_core: Optional[int] = None
+    ntasks_per_gpu: Optional[int] = None
+    ntasks_per_node: Optional[int] = None
+    ntasks_per_socket: Optional[int] = None
     output: str = "{{ SBT_LOGFILE_NAME }}.out"
-    open_mode: Union[Literal["append", "truncate"], None] = None
+    open_mode: Optional[Literal["append", "truncate"]] = None
     overcommit: bool = False
     oversubscribe: bool = False
     parsable: bool = False
@@ -371,19 +368,19 @@ class Options:
             "STACK",
         ]
     ] = field(default_factory=list)
-    qos: Union[int, None] = None
+    qos: Optional[int] = None
     quiet: bool = False
     requeue: bool = False
     reservation: List[str] = field(default_factory=list)
-    signal: Union[Signal, None] = None
-    sockets_per_node: Union[int, None] = None
+    signal: Optional[Signal] = None
+    sockets_per_node: Optional[int] = None
     spread_job: bool = False
-    switches: Union[Switches, None] = None
-    thread_spec: Union[int, None] = None
-    threads_per_core: Union[int, None] = None
-    time: Union[Duration, None] = None
-    time_min: Union[Duration, None] = None
-    tmp: Union[Mem, None] = None
+    switches: Optional[Switches] = None
+    thread_spec: Optional[int] = None
+    threads_per_core: Optional[int] = None
+    time: Optional[Duration] = None
+    time_min: Optional[Duration] = None
+    tmp: Optional[Mem] = None
     uid: Union[int, str] = ""
     use_min_nodes: bool = False
     verbose: bool = False

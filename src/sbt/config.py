@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 import jinja2
 import jinja2.meta
@@ -19,8 +19,8 @@ class Config:
     logdir: Path = field(default_factory=lambda: Path("."))
     slurm_options: Options = field(default_factory=Options)
     shebang: str = "#!/bin/bash -l"
-    template: Union[str, None] = None
-    template_path: Union[Path, None] = None
+    template: Optional[str] = None
+    template_path: Optional[Path] = None
     template_vars: Dict[str, Any] = field(default_factory=dict)
     env_vars: Dict[str, Any] = field(default_factory=dict)
 
