@@ -80,4 +80,4 @@ def run_sbatch(script_path: Path, dry_run: bool) -> int:
     args = ["sbatch", script_path.as_posix()]
     if dry_run:
         args.append("--test-only")
-    return subprocess.run(args, shell=True).returncode
+    return subprocess.run(args).returncode
