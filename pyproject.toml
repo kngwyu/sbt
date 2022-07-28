@@ -34,6 +34,9 @@ content-type = "text/markdown"
 homepage = "https://github.com/kngwyu/sbt"
 bug-tracker = "https://github.com/kngwyu/sbt/issues"
 
+[project.scripts]
+sbt = "sbt.cli:cli"
+
 [tool.setuptools]
 include-package-data = true
 license-files = ["LICENSE"]
