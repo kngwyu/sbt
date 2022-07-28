@@ -21,7 +21,7 @@ class Config:
     shebang: str = "#!/bin/bash -l"
     template: Optional[str] = None
     template_path: Optional[Path] = None
-    template_vars: Dict[str, Any] = field(default_factory=dict)
+    default_values: Dict[str, Any] = field(default_factory=dict)
     env_vars: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -67,7 +67,7 @@ def render(
     # Make a unique job name and out/err file names
     job_name = name + "-" + _override_name(config.logdir, overrides=cli_options)
     # Setup variables
-    variables = copy.deepcopy(config.template_vars)
+    variables = copy.deepcopy(config.default_values)
     variables.update(cli_options)
     logdir = config.logdir.absolute()
     variables.update(

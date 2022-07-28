@@ -57,6 +57,9 @@ ntasks = 1
 ntasks_per_node = 1
 partition = "gpu"
 time = { hours = 12 }
+
+[default_values]
+var = 1
 """
     config = from_toml(Config, toml)
     name = "myjob"
