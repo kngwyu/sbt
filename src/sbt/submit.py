@@ -66,9 +66,10 @@ def save_script(
         console = Console()
         syntax = Syntax(script, "bash")
         console.print(syntax)
-        Confirm.ask(
+        if not Confirm.ask(
             f"The above script is written to {script_path.as_posix()}. Proceed?"
-        )
+        ):
+            exit(0)
 
     logdir.mkdir(parents=True, exist_ok=True)
     script_path.touch()

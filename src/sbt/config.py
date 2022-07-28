@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import jinja2
 import jinja2.meta
@@ -39,15 +40,20 @@ class Config:
         else:
             assert self.template is not None
             template = self.template
-        loader = jinja2.DictLoader({"script": header + template})
-        return template, jinja2.Environment(loader=loader)
+        script = header + template
+        loader = jinja2.DictLoader({"script": script})
+        return script, jinja2.Environment(loader=loader)
 
 
-def _override_name(logdir: Path, overrides: dict[str, Any]) -> str:
+def _render_kv(k: str, v: Any) -> str:
+    return re.sub(r"[^A-Za-z0-9|_-]", "-", f"{k}-{v}")
+
+
+def _override_name(overrides: dict[str, Any]) -> str:
     if len(overrides) == 0:
         return "default"
     else:
-        return "-".join([f"{kv[0]}-{kv[1]}" for kv in overrides.items()])
+        return "-".join([_render_kv(*kv) for kv in overrides.items()])
 
 
 def render(
@@ -63,9 +69,9 @@ def render(
     # Timestamp
     if not no_timestamp:
         script += f"# timestamp: {datetime.now().isoformat()}\n"
-    template_str, env = config.get_environment(script)
+    script, env = config.get_environment(script)
     # Make a unique job name and out/err file names
-    job_name = name + "-" + _override_name(config.logdir, overrides=cli_options)
+    job_name = name + "-" + _override_name(overrides=cli_options)
     # Setup variables
     variables = copy.deepcopy(config.default_values)
     variables.update(cli_options)
@@ -77,14 +83,13 @@ def render(
         }
     )
 
-    # Show unused variables
     if show_prompt:
         from rich import markup
+        from rich import print as rich_print
         from rich.prompt import Confirm
         from rich.text import Text
 
         def variables_text(diff: set[str]) -> Text:
-            text = Text("Variables")
             diff_list = list(diff)
             if len(diff_list) == 1:
                 return markup.render(f"Variable [r]{diff_list[0]}[/r]")
@@ -96,12 +101,9 @@ def render(
                 variables = (
                     ",".join(diff_list[:-2]) + f", {diff_list[-2]}, and {diff_list[-1]}"
                 )
-                return markup.render(f"Variables [r] {variables} [/r]")
+                return markup.render(f"Variables [r]{variables}[/r] ")
 
-        template_variables = jinja2.meta.find_undeclared_variables(
-            env.parse(template_str)
-        )
-        n_template_vars = len(template_variables)
+        template_variables = jinja2.meta.find_undeclared_variables(env.parse(script))
         given_variables = set(variables.keys())
         diff_t_g = template_variables.difference(given_variables)
         diff_g_t = given_variables.difference(template_variables)
@@ -114,10 +116,12 @@ def render(
             ask_text = variables_text(diff_g_t)
             ask_text.append(" are given but not available in templates.")
         else:
-            ask_text = Text("are replaced. ")
-        ask_text.append("\nProceed?")
-        if not Confirm.ask(ask_text):
-            exit(0)
+            rich_print("All variables are specified :tada:")
+            ask_text = None
+        if ask_text is not None:
+            ask_text.append("\nProceed?")
+            if not Confirm.ask(ask_text):
+                exit(0)
 
     # Render variables in the script
     return env.get_template("script").render(variables), job_name

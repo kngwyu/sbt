@@ -15,5 +15,9 @@ mem_per_cpu = { size = 16, unit = "G" }
 nodes = 1
 ntasks = 1
 ntasks_per_node = 1
-partition = "gpu"
+partition = "{{ partition }}"
 time = { hours = 12 }
+
+[default_values]
+test_dir = "tests"
+message = "Hey"
