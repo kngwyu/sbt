@@ -34,7 +34,7 @@ def test_render_options() -> None:
 #SBATCH --ntasks-per-node=1
 #SBATCH --output={{ SBT_LOGFILE_NAME }}.out
 #SBATCH --partition=gpu
-#SBATCH --time=1-0:0
+#SBATCH --time=1-00:00:00
 """
     assert rendered == expected
 
@@ -77,7 +77,7 @@ var = 1
 #SBATCH --ntasks-per-node=1
 #SBATCH --output=/tmp/log/{name}-var-{var}.out
 #SBATCH --partition=gpu
-#SBATCH --time=12:0
+#SBATCH --time=12:00:00
 echo {var}"""
     assert rendered == expected, rendered
     assert jobname == f"{name}-var-{var}"
