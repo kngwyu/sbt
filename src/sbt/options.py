@@ -140,9 +140,9 @@ class Duration:
 
     def as_sbatch_str(self) -> str:
         if self.days == 0:
-            return f"{self.hours}:{self.minutes}"
+            return f"{self.hours:02}:{self.minutes:02}:00"
         else:
-            return f"{self.days}-{self.hours}:{self.minutes}"
+            return f"{self.days}-{self.hours:02}:{self.minutes:02}:00"
 
 
 @deserialize
