@@ -31,11 +31,10 @@ def save_script(
     overwrite: bool = False,
 ) -> Path:
     config_path = Path(config_file_name).absolute()
-    config_name = config_path.stem
     config_toml = config_path.read_text()
     config = from_toml(Config, config_toml)
     script, script_name = render(
-        name=config_name,
+        self_path=config_path,
         config=config,
         cli_options=cli_options,
         show_prompt=show_prompt,

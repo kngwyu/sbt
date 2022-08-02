@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from serde.toml import from_toml
 
@@ -63,7 +65,12 @@ var = 1
 """
     config = from_toml(Config, toml)
     name = "myjob"
-    rendered, jobname = render(name, config, {"var": var}, no_timestamp=True)
+    rendered, jobname = render(
+        Path("myjob.toml"),
+        config,
+        {"var": var},
+        no_timestamp=True,
+    )
     expected = f"""#!/bin/bash -l
 #SBATCH --cpus-per-task=1
 #SBATCH --error=/tmp/log/{name}-var-{var}.err

@@ -34,9 +34,16 @@ class Config:
                 "You can specify only one of [template] and [template_path]"
             )
 
-    def get_environment(self, header: str) -> tuple[str, jinja2.Environment]:
+    def get_environment(
+        self,
+        header: str,
+        basedir: Path,
+    ) -> tuple[str, jinja2.Environment]:
         if self.template_path is not None:
-            template = self.template_path.read_text()
+            if self.template_path.is_absolute():
+                template = self.template_path.read_text()
+            else:
+                template = basedir.joinpath(self.template_path).read_text()
         else:
             assert self.template is not None
             template = self.template
@@ -57,7 +64,7 @@ def _override_name(overrides: dict[str, Any]) -> str:
 
 
 def render(
-    name: str,
+    self_path: Path,
     config: Config,
     cli_options: dict[str, Any],
     show_prompt: bool = False,
@@ -69,9 +76,9 @@ def render(
     # Timestamp
     if not no_timestamp:
         script += f"# timestamp: {datetime.now().isoformat()}\n"
-    script, env = config.get_environment(script)
+    script, env = config.get_environment(script, self_path.parent)
     # Make a unique job name and out/err file names
-    job_name = name + "-" + _override_name(overrides=cli_options)
+    job_name = self_path.stem + "-" + _override_name(overrides=cli_options)
     # Setup variables
     variables = copy.deepcopy(config.default_values)
     variables.update(cli_options)
