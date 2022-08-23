@@ -87,8 +87,8 @@ def save_script(
             script,
             script_name,
             config.logdir.absolute(),
-            overwrite,
             show_prompt,
+            overwrite,
         )
 
 
