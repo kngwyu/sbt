@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import Iterable
 
 from rich import markup
 from rich.console import Console
@@ -24,22 +25,13 @@ def _nth_script(basedir: Path, script_name: str) -> int:
     return max_value
 
 
-def save_script(
-    config_file_name: str,
-    cli_options: dict[str, str],
-    show_prompt: bool = False,
-    overwrite: bool = False,
+def _save_script(
+    script: str,
+    script_name: str,
+    logdir: Path,
+    show_prompt: bool,
+    overwrite: bool,
 ) -> Path:
-    config_path = Path(config_file_name).absolute()
-    config_toml = config_path.read_text()
-    config = from_toml(Config, config_toml)
-    script, script_name = render(
-        self_path=config_path,
-        config=config,
-        cli_options=cli_options,
-        show_prompt=show_prompt,
-    )
-    logdir = config.logdir.absolute()
     script_path = logdir.joinpath(f"{script_name}.bash")
     if script_path.exists():
         if overwrite and show_prompt:
@@ -74,6 +66,30 @@ def save_script(
     script_path.touch()
     script_path.write_text(script)
     return script_path
+
+
+def save_script(
+    config_file_name: str,
+    cli_options: dict[str, str],
+    show_prompt: bool = False,
+    overwrite: bool = False,
+) -> Iterable[Path]:
+    config_path = Path(config_file_name).absolute()
+    config_toml = config_path.read_text()
+    config = from_toml(Config, config_toml)
+    for script, script_name in render(
+        self_path=config_path,
+        config=config,
+        cli_options=cli_options,
+        show_prompt=show_prompt,
+    ):
+        yield _save_script(
+            script,
+            script_name,
+            config.logdir.absolute(),
+            overwrite,
+            show_prompt,
+        )
 
 
 def run_sbatch(script_path: Path, dry_run: bool) -> int:

@@ -65,11 +65,15 @@ var = 1
 """
     config = from_toml(Config, toml)
     name = "myjob"
-    rendered, jobname = render(
-        Path("myjob.toml"),
-        config,
-        {"var": var},
-        no_timestamp=True,
+    rendered, jobname = next(
+        iter(
+            render(
+                Path("myjob.toml"),
+                config,
+                {"var": var},
+                no_timestamp=True,
+            )
+        )
     )
     expected = f"""#!/bin/bash -l
 #SBATCH --cpus-per-task=1
@@ -88,3 +92,62 @@ var = 1
 echo {var}"""
     assert rendered == expected, rendered
     assert jobname == f"{name}-var-{var}"
+
+
+def test_render_matrix() -> None:
+    toml = r"""
+logdir = "/tmp/log"
+
+template =  "echo {{ foo }} && echo {{ bar }}"
+
+[slurm_options]
+cpus_per_task = 1
+gres = [["gpu", 1]]
+mail_type = ["END", "FAIL"]
+mail_user = "yuji.kanagawa@oist.jp"
+mem_per_cpu = { size = 16, unit = "G" }
+nodes = 1
+ntasks = 1
+ntasks_per_node = 1
+partition = "gpu"
+time = { hours = 12 }
+
+[matrix]
+foo = ["yay", "me"]
+bar = ["oh", "no"]
+"""
+    config = from_toml(Config, toml)
+    name = "myjob"
+    foobar_correct = [
+        ("yay", "oh"),
+        ("yay", "no"),
+        ("me", "oh"),
+        ("me", "no"),
+    ]
+    for foobar, (rendered, jobname) in zip(
+        foobar_correct,
+        render(
+            Path("myjob.toml"),
+            config,
+            {},
+            no_timestamp=True,
+        ),
+    ):
+        foo, bar = foobar
+        expected = f"""#!/bin/bash -l
+#SBATCH --cpus-per-task=1
+#SBATCH --error=/tmp/log/{name}-foo-{foo}-bar-{bar}.err
+#SBATCH --gres=gpu:1
+#SBATCH --job-name={name}-foo-{foo}-bar-{bar}
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=yuji.kanagawa@oist.jp
+#SBATCH --mem-per-cpu=16G
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --output=/tmp/log/{name}-foo-{foo}-bar-{bar}.out
+#SBATCH --partition=gpu
+#SBATCH --time=12:00:00
+echo {foo} && echo {bar}"""
+        assert rendered == expected, rendered
+        assert jobname == f"{name}-foo-{foo}-bar-{bar}"
