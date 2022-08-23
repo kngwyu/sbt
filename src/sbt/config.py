@@ -142,7 +142,7 @@ def render(
             }
         )
 
-        if show_prompt and _prompt(env, script, variables.keys()):
+        if show_prompt and not _prompt(env, script, variables.keys()):
             exit(0)
 
         # Render variables in the script
