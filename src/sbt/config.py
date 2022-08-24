@@ -35,6 +35,9 @@ class Config:
                 "You can specify only one of [template] and [template_path]"
             )
 
+    def is_overriden_key(self, key: str) -> bool:
+        return key in self.matrix or key not in self.default_values
+
     def get_environment(
         self,
         header: str,
@@ -130,9 +133,7 @@ def render(
     script, env = config.get_environment(script, self_path.parent)
     for variables in config.variables_iter(cli_options):
         # Make a unique job name and out/err file names
-        overrides = {
-            k: v for k, v in variables.items() if k not in config.default_values
-        }
+        overrides = {k: v for k, v in variables.items() if config.is_overriden_key(k)}
         job_name = self_path.stem + "-" + _override_name(overrides=overrides)
         logdir = config.logdir.absolute()
         variables.update(

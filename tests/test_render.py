@@ -112,6 +112,9 @@ ntasks_per_node = 1
 partition = "gpu"
 time = { hours = 12 }
 
+[default-values]
+foo = "fooooooo"
+
 [matrix]
 foo = ["yay", "me"]
 bar = ["oh", "no"]
