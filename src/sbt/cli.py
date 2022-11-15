@@ -12,8 +12,8 @@ def _parse_arg(arg: str) -> tuple[str, str]:
     splitted = arg[2:].split("=")
     if len(splitted) != 2:
         raise ValueError("Only '--key=value' is acceptable as an additional argument")
-    key, value = map(lambda s: s.replace("-", "_"), splitted)
-    return key, value
+    key, value = splitted
+    return key.replace("-", "_"), value
 
 
 @click.command(
