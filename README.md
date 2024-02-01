@@ -45,6 +45,8 @@ then
 sbt my-config.toml
 ```
 
+Executing this command makes 9 (3x3) slurm batch files for each combination of alpha and beta, and submits them by `sbatch` command.
+
 [jinja]: https://jinja.palletsprojects.com/en/3.1.x/
 [slurm]: https://slurm.schedmd.com/
 [sbatch]: https://slurm.schedmd.com/sbatch.html
