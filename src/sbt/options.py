@@ -270,6 +270,7 @@ class Options:
     distribution: Optional[Distribution] = None
     error: str = "{{ SBT_LOGFILE_NAME }}.err"
     exclusive: Optional[Literal["mcs", "user"]] = None
+    exclude: List[str] = field(default_factory=list)
     export: Union[Literal["ALL", "NONE"], List[str], None] = None
     export_file: Optional[Path] = None
     extra_node_info: Optional[
